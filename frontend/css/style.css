@@ -1,0 +1,372 @@
+
+/* =========================================
+   NEAREXPIRY - GLOBAL DESIGN SYSTEM
+========================================= */
+
+:root {
+    --forest: #184030;
+    --ivory: #FFFEF3;
+    --charcoal: #292826;
+    --terracotta: #A66F55;
+    --beige: #F0EEE4;
+    --white: #FFFFFF;
+
+    --text-muted: #77766F;
+    --border: #E5E3D9;
+    --success: #347A53;
+    --warning: #B77932;
+    --danger: #B84B45;
+
+    --radius: 12px;
+    --shadow: 0 4px 18px rgba(24, 64, 48, 0.06);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Inter", "Segoe UI", sans-serif;
+    background: var(--ivory);
+    color: var(--charcoal);
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+/* =========================================
+   TYPOGRAPHY
+========================================= */
+
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--forest);
+    margin-bottom: 6px;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 650;
+    color: var(--charcoal);
+    margin-bottom: 16px;
+}
+
+/* =========================================
+   NAVIGATION
+========================================= */
+
+.app-navbar {
+    background: var(--forest);
+    color: var(--white);
+    min-height: 68px;
+    padding: 12px 28px;
+}
+
+.brand {
+    font-size: 23px;
+    font-weight: 750;
+    letter-spacing: -0.7px;
+    color: var(--white);
+}
+
+.brand span {
+    color: #D4B49B;
+}
+
+.nav-link-custom {
+    color: rgba(255,255,255,0.78);
+    padding: 9px 13px;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: 0.2s ease;
+}
+
+.nav-link-custom:hover,
+.nav-link-custom.active {
+    color: var(--white);
+    background: rgba(255,255,255,0.13);
+}
+
+/* =========================================
+   PAGE LAYOUT
+========================================= */
+
+.app-container {
+    width: min(1200px, 94%);
+    margin: 36px auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 26px;
+}
+
+/* =========================================
+   CARDS
+========================================= */
+
+.app-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow);
+}
+
+.stat-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    height: 100%;
+}
+
+.stat-label {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-size: 30px;
+    font-weight: 750;
+    color: var(--forest);
+}
+
+.stat-description {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* =========================================
+   BUTTONS
+========================================= */
+
+.btn-primary-custom {
+    background: var(--forest);
+    color: var(--white);
+    border: 1px solid var(--forest);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: 600;
+    transition: 0.2s ease;
+}
+
+.btn-primary-custom:hover {
+    background: #103225;
+    color: var(--white);
+}
+
+.btn-secondary-custom {
+    background: var(--beige);
+    color: var(--forest);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: 600;
+}
+
+.btn-danger-custom {
+    background: #F9EAE7;
+    color: var(--danger);
+    border: 1px solid #EFD3CF;
+    border-radius: 8px;
+    padding: 9px 15px;
+}
+
+/* =========================================
+   FORMS
+========================================= */
+
+.form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--charcoal);
+    margin-bottom: 6px;
+}
+
+.form-control,
+.form-select {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 13px;
+    background: var(--white);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--forest);
+    box-shadow: 0 0 0 3px rgba(24, 64, 48, 0.10);
+}
+
+/* =========================================
+   TABLES
+========================================= */
+
+.table-container {
+    overflow-x: auto;
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.table {
+    margin-bottom: 0;
+    vertical-align: middle;
+}
+
+.table thead th {
+    background: var(--beige);
+    color: var(--forest);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 15px;
+    white-space: nowrap;
+}
+
+.table tbody td {
+    padding: 14px 15px;
+    font-size: 13px;
+}
+
+/* =========================================
+   STATUS BADGES
+========================================= */
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 11px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.status-safe,
+.status-approved {
+    background: #E5F2E8;
+    color: var(--success);
+}
+
+.status-near-expiry,
+.status-pending {
+    background: #FFF1DB;
+    color: #98621D;
+}
+
+.status-expired,
+.status-rejected {
+    background: #F9E7E5;
+    color: var(--danger);
+}
+
+/* =========================================
+   ALERTS AND EMPTY STATES
+========================================= */
+
+.alert-message {
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 15px;
+}
+
+.alert-error {
+    background: #F9E7E5;
+    color: var(--danger);
+}
+
+.alert-success {
+    background: #E5F2E8;
+    color: var(--success);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 45px 20px;
+    color: var(--text-muted);
+}
+
+/* =========================================
+   AUTHENTICATION PAGES
+========================================= */
+
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 25px;
+    background: var(--ivory);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 35px;
+    box-shadow: var(--shadow);
+}
+
+.auth-heading {
+    font-size: 27px;
+    color: var(--forest);
+    font-weight: 750;
+    margin-bottom: 7px;
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+========================================= */
+
+@media (max-width: 768px) {
+    .app-navbar {
+        padding: 12px 16px;
+    }
+
+    .app-container {
+        margin: 24px auto;
+    }
+
+    .page-title {
+        font-size: 23px;
+    }
+
+    .auth-card {
+        padding: 25px 20px;
+    }
+
+    .stat-value {
+        font-size: 25px;
+    }
+}
