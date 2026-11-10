@@ -5,97 +5,149 @@ const Medicine = require("../models/Medicine");
 const Request = require("../models/Request");
 const AuditLog = require("../models/AuditLog");
 
+// Get the end of the current day.
+// Medicine expiry dates are treated as calendar dates.
+const getEndOfToday = () => {
+    const date = new Date();
+    date.setHours(23, 59, 59, 999);
+    return date;
+};
+
 // Create a request for surplus medicine from another facility
 exports.createRequest = async (req, res, next) => {
+    const session = await mongoose.startSession();
+
     try {
         const { medicineId, quantity } = req.body;
 
-        // Validate required fields
         if (!medicineId || quantity === undefined) {
             return res.status(400).json({
                 message: "Medicine ID and quantity are required"
             });
         }
 
-        // Validate MongoDB medicine ID
         if (!mongoose.Types.ObjectId.isValid(medicineId)) {
             return res.status(400).json({
                 message: "Invalid medicine ID"
             });
         }
 
-        // Quantity must be a positive integer
-        if (!Number.isInteger(quantity) || quantity <= 0) {
+        if (
+            !Number.isSafeInteger(quantity) ||
+            quantity <= 0
+        ) {
             return res.status(400).json({
                 message: "Quantity must be a positive integer"
             });
         }
 
-        // Find the medicine batch
-        const medicine = await Medicine.findById(medicineId);
-
-        if (!medicine) {
-            return res.status(404).json({
-                message: "Medicine batch not found"
-            });
-        }
-
-        // A facility cannot request its own surplus
-        if (
-            String(medicine.facility) === String(req.user.facility)
-        ) {
+        if (!req.user.facility) {
             return res.status(400).json({
-                message: "You cannot request surplus from your own facility"
+                message: "User is not associated with a facility"
             });
         }
 
-        // Do not allow requests for expired medicine
-        if (new Date(medicine.expiryDate) < new Date()) {
-            return res.status(400).json({
-                message: "Cannot request expired medicine"
-            });
-        }
+        let createdRequestId;
 
-        // Ensure the batch has available surplus
-        if (medicine.surplusQuantity <= 0) {
-            return res.status(400).json({
-                message: "No surplus available for this medicine"
-            });
-        }
+        await session.withTransaction(async () => {
+            const medicine = await Medicine.findById(medicineId)
+                .session(session);
 
-        // Requested quantity cannot exceed available surplus
-        if (quantity > medicine.surplusQuantity) {
-            return res.status(400).json({
-                message: "Requested quantity exceeds available surplus"
-            });
-        }
+            if (!medicine) {
+                const error = new Error("Medicine batch not found");
+                error.statusCode = 404;
+                throw error;
+            }
 
-        // Create a pending request
-        const newRequest = await Request.create({
-            medicine: medicine._id,
-            requestingFacility: req.user.facility,
-            supplyingFacility: medicine.facility,
-            quantity: quantity,
-            status: "Pending",
-            requestedBy: req.user._id
+            if (
+                String(medicine.facility) ===
+                String(req.user.facility)
+            ) {
+                const error = new Error(
+                    "You cannot request surplus from your own facility"
+                );
+                error.statusCode = 400;
+                throw error;
+            }
+
+            if (medicine.expiryDate > getEndOfToday()) {
+                // Continue: medicine is not expired.
+            } else if (
+                new Date(medicine.expiryDate).setHours(0, 0, 0, 0) <
+                new Date().setHours(0, 0, 0, 0)
+            ) {
+                const error = new Error(
+                    "Cannot request expired medicine"
+                );
+                error.statusCode = 400;
+                throw error;
+            }
+
+            if (medicine.surplusQuantity <= 0) {
+                const error = new Error(
+                    "No surplus available for this medicine"
+                );
+                error.statusCode = 400;
+                throw error;
+            }
+
+            if (quantity > medicine.surplusQuantity) {
+                const error = new Error(
+                    "Requested quantity exceeds available surplus"
+                );
+                error.statusCode = 400;
+                throw error;
+            }
+
+            const [newRequest] = await Request.create(
+                [{
+                    medicine: medicine._id,
+                    requestingFacility: req.user.facility,
+                    supplyingFacility: medicine.facility,
+                    quantity,
+                    status: "Pending",
+                    requestedBy: req.user._id
+                }],
+                { session }
+            );
+
+            await AuditLog.create(
+                [{
+                    request: newRequest._id,
+                    action: "Created",
+                    performedBy: req.user._id,
+                    note: `Requested ${quantity} units of ${medicine.name}`
+                }],
+                { session }
+            );
+
+            createdRequestId = newRequest._id;
         });
 
-        // Record request creation in the audit log
-        await AuditLog.create({
-            request: newRequest._id,
-            action: "Created",
-            performedBy: req.user._id,
-            note: `Requested ${quantity} units of ${medicine.name}`
-        });
+        const populatedRequest = await Request.findById(
+            createdRequestId
+        )
+            .populate("medicine", "name batchNumber expiryDate quantity surplusQuantity")
+            .populate("requestingFacility", "name city")
+            .populate("supplyingFacility", "name city")
+            .populate("requestedBy", "name email");
 
-        // Return the created request
-        res.status(201).json({
+        return res.status(201).json({
             message: "Medicine request submitted successfully",
-            request: newRequest
+            request: populatedRequest
         });
 
     } catch (error) {
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({
+                message: error.message
+            });
+        }
+
         next(error);
+
+    } finally {
+        await session.endSession();
     }
 };
 
@@ -105,16 +157,13 @@ exports.getRequests = async (req, res, next) => {
     try {
         let filter = {};
 
-        // Admin users can view all requests
         if (req.user.role !== "admin") {
-
             if (!req.user.facility) {
                 return res.status(400).json({
                     message: "User is not associated with a facility"
                 });
             }
 
-            // Include requests sent by and received by this facility
             filter = {
                 $or: [
                     { requestingFacility: req.user.facility },
@@ -124,16 +173,19 @@ exports.getRequests = async (req, res, next) => {
         }
 
         const requests = await Request.find(filter)
-            .populate("medicine", "name batchNumber expiryDate quantity surplusQuantity")
+            .populate(
+                "medicine",
+                "name batchNumber expiryDate quantity surplusQuantity"
+            )
             .populate("requestingFacility", "name city")
             .populate("supplyingFacility", "name city")
             .populate("requestedBy", "name email")
             .populate("decidedBy", "name email")
             .sort({ createdAt: -1 });
 
-        res.status(200).json({
+        return res.status(200).json({
             count: requests.length,
-            requests: requests
+            requests
         });
 
     } catch (error) {
@@ -144,97 +196,181 @@ exports.getRequests = async (req, res, next) => {
 
 // Approve or reject a medicine request (pharmacist only)
 exports.decide = async (req, res, next) => {
+    const session = await mongoose.startSession();
+
     try {
         const { decision, reason } = req.body;
+        const { id } = req.params;
 
-        // Validate the decision
         if (!["Approved", "Rejected"].includes(decision)) {
             return res.status(400).json({
                 message: "Invalid decision"
             });
         }
 
-        // A reason is required for the decision
-        if (!reason || typeof reason !== "string" || !reason.trim()) {
+        if (
+            !reason ||
+            typeof reason !== "string" ||
+            !reason.trim()
+        ) {
             return res.status(400).json({
                 message: "A reason is required"
             });
         }
 
-        // Validate the request ID
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 message: "Invalid request ID"
             });
         }
 
-        // Find the request and its associated medicine
-        const request = await Request.findById(req.params.id)
-            .populate("medicine");
-
-        // Request must exist and still be pending
-        if (!request || request.status !== "Pending") {
+        if (!req.user.facility) {
             return res.status(400).json({
-                message: "Request is not pending"
+                message: "Pharmacist is not assigned to a facility"
             });
         }
 
-        // Only the supplying facility's pharmacist can decide
-        if (
-            String(request.supplyingFacility) !==
-            String(req.user.facility)
-        ) {
-            return res.status(403).json({
-                message: "Not your facility"
-            });
-        }
+        await session.withTransaction(async () => {
+            const request = await Request.findById(id).session(session);
 
-        // Check that the associated medicine still exists
-        if (!request.medicine) {
-            return res.status(404).json({
-                message: "Associated medicine batch not found"
-            });
-        }
-
-        // Reduce stock only when the request is approved
-        if (decision === "Approved") {
-            const medicine = request.medicine;
-
-            // Recheck available surplus before approval
-            if (request.quantity > medicine.surplusQuantity) {
-                return res.status(400).json({
-                    message: "Not enough surplus left"
-                });
+            if (!request) {
+                const error = new Error("Request not found");
+                error.statusCode = 404;
+                throw error;
             }
 
-            // Reduce total stock and listed surplus
-            medicine.quantity -= request.quantity;
-            medicine.surplusQuantity -= request.quantity;
+            if (request.status !== "Pending") {
+                const error = new Error("Request is not pending");
+                error.statusCode = 400;
+                throw error;
+            }
 
-            await medicine.save();
-        }
+            if (
+                String(request.supplyingFacility) !==
+                String(req.user.facility)
+            ) {
+                const error = new Error("Not your facility");
+                error.statusCode = 403;
+                throw error;
+            }
 
-        // Update request decision details
-        request.status = decision;
-        request.reason = reason.trim();
-        request.decidedBy = req.user._id;
+            const medicine = await Medicine.findById(request.medicine)
+                .session(session);
 
-        await request.save();
+            if (!medicine) {
+                const error = new Error(
+                    "Associated medicine batch not found"
+                );
+                error.statusCode = 404;
+                throw error;
+            }
 
-        // Record the decision in the audit log
-        await AuditLog.create({
-            request: request._id,
-            action: decision,
-            performedBy: req.user._id,
-            note: reason.trim()
+            if (decision === "Approved") {
+                if (
+                    new Date(medicine.expiryDate).setHours(0, 0, 0, 0) <
+                    new Date().setHours(0, 0, 0, 0)
+                ) {
+                    const error = new Error(
+                        "Expired medicines cannot be approved"
+                    );
+                    error.statusCode = 400;
+                    throw error;
+                }
+
+                // Conditional update prevents stock from becoming negative.
+                const updatedMedicine = await Medicine.findOneAndUpdate(
+                    {
+                        _id: medicine._id,
+                        facility: req.user.facility,
+                        quantity: { $gte: request.quantity },
+                        surplusQuantity: { $gte: request.quantity }
+                    },
+                    {
+                        $inc: {
+                            quantity: -request.quantity,
+                            surplusQuantity: -request.quantity
+                        }
+                    },
+                    {
+                        new: true,
+                        runValidators: true,
+                        session
+                    }
+                );
+
+                if (!updatedMedicine) {
+                    const error = new Error(
+                        "Not enough available stock or surplus"
+                    );
+                    error.statusCode = 400;
+                    throw error;
+                }
+            }
+
+            // Only one decision can change a pending request.
+            const updatedRequest = await Request.findOneAndUpdate(
+                {
+                    _id: id,
+                    status: "Pending"
+                },
+                {
+                    $set: {
+                        status: decision,
+                        reason: reason.trim(),
+                        decidedBy: req.user._id
+                    }
+                },
+                {
+                    new: true,
+                    runValidators: true,
+                    session
+                }
+            );
+
+            if (!updatedRequest) {
+                const error = new Error(
+                    "Request has already been decided"
+                );
+                error.statusCode = 409;
+                throw error;
+            }
+
+            await AuditLog.create(
+                [{
+                    request: updatedRequest._id,
+                    action: decision,
+                    performedBy: req.user._id,
+                    note: reason.trim()
+                }],
+                { session }
+            );
         });
 
-        res.status(200).json({
+        const finalRequest = await Request.findById(id)
+            .populate(
+                "medicine",
+                "name batchNumber expiryDate quantity surplusQuantity"
+            )
+            .populate("requestingFacility", "name city")
+            .populate("supplyingFacility", "name city")
+            .populate("requestedBy", "name email")
+            .populate("decidedBy", "name email");
+
+        return res.status(200).json({
             message: `Request ${decision.toLowerCase()} successfully`,
-            request: request
+            request: finalRequest
         });
 
     } catch (error) {
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({
+                message: error.message
+            });
+        }
+
         next(error);
+
+    } finally {
+        await session.endSession();
     }
 };
