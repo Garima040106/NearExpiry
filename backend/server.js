@@ -37,7 +37,6 @@ app.use(sanitize);
 
 // Serve frontend files
 const frontendPath = path.join(__dirname, "../frontend");
-
 app.use(express.static(frontendPath));
 
 // Health check
@@ -61,11 +60,6 @@ app.use("/api", auditRoutes);
 
 // Dashboard routes
 app.use("/api", dashboardRoutes);
-app.use("/api", (req, res) => {
-    res.status(404).json({
-        message: "API route not found"
-    });
-});
 
 // Admin management routes
 app.use("/api", adminRoutes);
@@ -80,7 +74,7 @@ app.use("/api", (req, res) => {
 // Central error handler
 app.use(errorHandler);
 
-// Connect to MongoDB before starting the server
+// Connect database before starting server
 const startServer = async () => {
     try {
         await connectDB();
