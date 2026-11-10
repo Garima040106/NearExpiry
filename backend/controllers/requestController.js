@@ -140,3 +140,101 @@ exports.getRequests = async (req, res, next) => {
         next(error);
     }
 };
+
+
+// Approve or reject a medicine request (pharmacist only)
+exports.decide = async (req, res, next) => {
+    try {
+        const { decision, reason } = req.body;
+
+        // Validate the decision
+        if (!["Approved", "Rejected"].includes(decision)) {
+            return res.status(400).json({
+                message: "Invalid decision"
+            });
+        }
+
+        // A reason is required for the decision
+        if (!reason || typeof reason !== "string" || !reason.trim()) {
+            return res.status(400).json({
+                message: "A reason is required"
+            });
+        }
+
+        // Validate the request ID
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                message: "Invalid request ID"
+            });
+        }
+
+        // Find the request and its associated medicine
+        const request = await Request.findById(req.params.id)
+            .populate("medicine");
+
+        // Request must exist and still be pending
+        if (!request || request.status !== "Pending") {
+            return res.status(400).json({
+                message: "Request is not pending"
+            });
+        }
+
+        // Only the supplying facility's pharmacist can decide
+        if (
+            String(request.supplyingFacility) !==
+            String(req.user.facility)
+        ) {
+            return res.status(403).json({
+                message: "Not your facility"
+            });
+        }
+
+        // Check that the associated medicine still exists
+        if (!request.medicine) {
+            return res.status(404).json({
+                message: "Associated medicine batch not found"
+            });
+        }
+
+        // Reduce stock only when the request is approved
+        if (decision === "Approved") {
+            const medicine = request.medicine;
+
+            // Recheck available surplus before approval
+            if (request.quantity > medicine.surplusQuantity) {
+                return res.status(400).json({
+                    message: "Not enough surplus left"
+                });
+            }
+
+            // Reduce total stock and listed surplus
+            medicine.quantity -= request.quantity;
+            medicine.surplusQuantity -= request.quantity;
+
+            await medicine.save();
+        }
+
+        // Update request decision details
+        request.status = decision;
+        request.reason = reason.trim();
+        request.decidedBy = req.user._id;
+
+        await request.save();
+
+        // Record the decision in the audit log
+        await AuditLog.create({
+            request: request._id,
+            action: decision,
+            performedBy: req.user._id,
+            note: reason.trim()
+        });
+
+        res.status(200).json({
+            message: `Request ${decision.toLowerCase()} successfully`,
+            request: request
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};

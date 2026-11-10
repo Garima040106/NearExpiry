@@ -5,7 +5,8 @@ const router = express.Router();
 
 const {
     createRequest,
-    getRequests
+    getRequests,
+    decide
 } = require("../controllers/requestController");
 
 const {
@@ -26,6 +27,14 @@ router.get(
     "/requests",
     verifyToken,
     getRequests
+);
+
+// Approve or reject a request (pharmacist only)
+router.patch(
+    "/requests/:id/decision",
+    verifyToken,
+    requireRole("pharmacist"),
+    decide
 );
 
 module.exports = router;
