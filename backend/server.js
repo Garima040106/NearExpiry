@@ -12,6 +12,7 @@ const medicineRoutes = require("./routes/medicines");
 const requestRoutes = require("./routes/requests");
 const auditRoutes = require("./routes/audit");
 const dashboardRoutes = require("./routes/dashboard");
+const adminRoutes = require("./routes/admin");
 
 const sanitize = require("./middleware/sanitize");
 const errorHandler = require("./middleware/errorHandler");
@@ -58,11 +59,16 @@ app.use("/api", requestRoutes);
 // Audit trail routes
 app.use("/api", auditRoutes);
 
+// Dashboard routes
+app.use("/api", dashboardRoutes);
 app.use("/api", (req, res) => {
     res.status(404).json({
         message: "API route not found"
     });
 });
+
+// Admin management routes
+app.use("/api", adminRoutes);
 
 // Handle unknown API routes
 app.use("/api", (req, res) => {
