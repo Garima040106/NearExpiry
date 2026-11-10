@@ -9,6 +9,7 @@ const connectDB = require("./config/db");
 
 const authRoutes = require("./routes/auth");
 const medicineRoutes = require("./routes/medicines");
+const requestRoutes = require("./routes/requests");
 
 const sanitize = require("./middleware/sanitize");
 const errorHandler = require("./middleware/errorHandler");
@@ -48,6 +49,9 @@ app.use("/api", authRoutes);
 
 // Medicine inventory and surplus routes
 app.use("/api", medicineRoutes);
+
+// Medicine request routes
+app.use("/api", requestRoutes);
 
 // Handle unknown API routes
 app.use("/api", (req, res) => {
