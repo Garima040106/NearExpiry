@@ -1,12 +1,15 @@
+
 require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+
+const connectDB = require("./config/db");
+
 const authRoutes = require("./routes/auth");
 const medicineRoutes = require("./routes/medicines");
 
-const connectDB = require("./config/db");
 const sanitize = require("./middleware/sanitize");
 const errorHandler = require("./middleware/errorHandler");
 
@@ -14,15 +17,18 @@ const app = express();
 
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors({
-    origin: process.env.FRONTEND_ORIGIN || "http://localhost:5000"
-}));
+// CORS configuration
+app.use(
+    cors({
+        origin: process.env.FRONTEND_ORIGIN || "http://localhost:5000"
+    })
+);
 
+// Parse incoming request data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Sanitize incoming data
+// Sanitize incoming request data
 app.use(sanitize);
 
 // Serve frontend files
@@ -30,7 +36,7 @@ const frontendPath = path.join(__dirname, "../frontend");
 
 app.use(express.static(frontendPath));
 
-// Basic health check
+// Health check
 app.get("/api/health", (req, res) => {
     res.status(200).json({
         message: "NearExpiry API is running"
@@ -39,7 +45,9 @@ app.get("/api/health", (req, res) => {
 
 // Authentication and facility routes
 app.use("/api", authRoutes);
-app.use("/api/medicines", medicineRoutes);
+
+// Medicine inventory and surplus routes
+app.use("/api", medicineRoutes);
 
 // Handle unknown API routes
 app.use("/api", (req, res) => {
@@ -51,7 +59,7 @@ app.use("/api", (req, res) => {
 // Central error handler
 app.use(errorHandler);
 
-// Connect database before starting server
+// Connect to MongoDB before starting the server
 const startServer = async () => {
     try {
         await connectDB();

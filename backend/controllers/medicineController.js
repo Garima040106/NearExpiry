@@ -318,3 +318,122 @@ exports.deleteMedicine = async (req, res, next) => {
         next(error);
     }
 };
+
+// Set surplus quantity for a medicine batch
+exports.setSurplus = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { surplusQuantity } = req.body;
+
+        if (!isValidId(id)) {
+            return res.status(400).json({
+                message: "Invalid medicine ID"
+            });
+        }
+
+        const parsedSurplus = Number(surplusQuantity);
+
+        if (
+            surplusQuantity === undefined ||
+            !Number.isSafeInteger(parsedSurplus) ||
+            parsedSurplus < 0
+        ) {
+            return res.status(400).json({
+                message: "Surplus quantity must be a non-negative whole number"
+            });
+        }
+
+        const medicine = await Medicine.findOne({
+            _id: id,
+            facility: req.user.facility
+        });
+
+        if (!medicine) {
+            return res.status(404).json({
+                message: "Medicine batch not found"
+            });
+        }
+
+        // Prevent expired medicines from being listed
+        if (medicine.status === "Expired" && parsedSurplus > 0) {
+            return res.status(400).json({
+                message: "Expired medicines cannot be listed as surplus"
+            });
+        }
+
+        // Surplus cannot exceed available stock
+        if (parsedSurplus > medicine.quantity) {
+            return res.status(400).json({
+                message: "Surplus quantity cannot exceed available stock"
+            });
+        }
+
+        medicine.surplusQuantity = parsedSurplus;
+
+        await medicine.save();
+
+        res.status(200).json({
+            message: "Surplus quantity updated successfully",
+            medicine
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Browse surplus medicines from other facilities
+exports.getSurplus = async (req, res, next) => {
+    try {
+        const { q, days } = req.query;
+
+        const filter = {
+            facility: { $ne: req.user.facility },
+            surplusQuantity: { $gt: 0 },
+            expiryDate: { $gte: new Date() }
+        };
+
+        // Search by medicine name
+        if (q && q.trim()) {
+            const searchText = q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+            filter.name = {
+                $regex: searchText,
+                $options: "i"
+            };
+        }
+
+        // Filter medicines expiring within the given number of days
+        if (days !== undefined) {
+            const numberOfDays = Number(days);
+
+            if (
+                !Number.isInteger(numberOfDays) ||
+                numberOfDays < 0 ||
+                numberOfDays > 3650
+            ) {
+                return res.status(400).json({
+                    message: "Days must be a valid number between 0 and 3650"
+                });
+            }
+
+            const endDate = new Date(
+                Date.now() + numberOfDays * 86400000
+            );
+
+            filter.expiryDate.$lte = endDate;
+        }
+
+        const medicines = await Medicine.find(filter)
+            .populate("facility", "name city")
+            .sort({ expiryDate: 1 });
+
+        res.status(200).json({
+            count: medicines.length,
+            medicines
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};

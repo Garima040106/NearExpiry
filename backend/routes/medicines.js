@@ -6,7 +6,9 @@ const {
     getMedicines,
     addMedicine,
     updateMedicine,
-    deleteMedicine
+    deleteMedicine,
+    setSurplus,
+    getSurplus
 } = require("../controllers/medicineController");
 
 const {
@@ -25,5 +27,20 @@ router.put("/:id", verifyToken, requireRole("staff"), updateMedicine);
 
 // Delete medicine batch
 router.delete("/:id", verifyToken, requireRole("staff"), deleteMedicine);
+
+// Set surplus quantity
+router.patch(
+    "/:id/surplus",
+    verifyToken,
+    requireRole("staff"),
+    setSurplus
+);
+
+// Browse surplus from other facilities
+router.get(
+    "/surplus",
+    verifyToken,
+    getSurplus
+);
 
 module.exports = router;
