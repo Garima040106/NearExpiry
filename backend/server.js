@@ -22,11 +22,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // CORS configuration
-app.use(
-    cors({
-        origin: process.env.FRONTEND_ORIGIN || "http://localhost:5000"
-    })
-);
+// CORS configuration
+app.use(cors());
 
 // Parse incoming request data
 app.use(express.json());
@@ -74,22 +71,24 @@ app.use("/api", (req, res) => {
 // Central error handler
 app.use(errorHandler);
 
-// Connect database before starting server
-const startServer = async () => {
-    try {
-        await connectDB();
+// Start the local server only when this file is run directly
+if (require.main === module) {
+    const startServer = async () => {
+        try {
+            await connectDB();
 
-        app.listen(PORT, () => {
-            console.log(`NearExpiry server running on port ${PORT}`);
-            console.log(`Open http://localhost:${PORT}`);
-        });
+            app.listen(PORT, () => {
+                console.log(`NearExpiry server running on port ${PORT}`);
+                console.log(`Open http://localhost:${PORT}`);
+            });
 
-    } catch (error) {
-        console.error("Server startup failed:", error.message);
-        process.exit(1);
-    }
-};
+        } catch (error) {
+            console.error("Server startup failed:", error.message);
+            process.exit(1);
+        }
+    };
 
-startServer();
+    startServer();
+}
 
 module.exports = app;
