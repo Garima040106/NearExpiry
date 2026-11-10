@@ -3,7 +3,11 @@
    NEAREXPIRY - API SERVICE
 ========================================= */
 
-const API_BASE_URL = "/api";
+const API_BASE_URL =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+        ? "/api"
+        : "https://nearexpiry-8hjd.onrender.com/api";
 
 const TOKEN_KEY = "nearexpiry_token";
 const USER_KEY = "nearexpiry_user";
