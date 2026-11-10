@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const authRoutes = require("./routes/auth");
 
 const connectDB = require("./config/db");
 const sanitize = require("./middleware/sanitize");
@@ -35,7 +36,8 @@ app.get("/api/health", (req, res) => {
     });
 });
 
-// API routes will be mounted here in the next phases
+// Authentication and facility routes
+app.use("/api", authRoutes);
 
 // Handle unknown API routes
 app.use("/api", (req, res) => {
