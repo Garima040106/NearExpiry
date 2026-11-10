@@ -11,6 +11,7 @@ const authRoutes = require("./routes/auth");
 const medicineRoutes = require("./routes/medicines");
 const requestRoutes = require("./routes/requests");
 const auditRoutes = require("./routes/audit");
+const dashboardRoutes = require("./routes/dashboard");
 
 const sanitize = require("./middleware/sanitize");
 const errorHandler = require("./middleware/errorHandler");
