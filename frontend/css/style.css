@@ -370,3 +370,21 @@ button {
         font-size: 25px;
     }
 }
+
+/* Brand visibility fix */
+.brand {
+    color: var(--forest) !important;
+    font-size: 23px;
+    font-weight: 750;
+    letter-spacing: -0.7px;
+    text-decoration: none;
+}
+
+.brand:hover,
+.brand:focus {
+    color: var(--forest) !important;
+}
+
+.brand span {
+    color: var(--terracotta);
+}

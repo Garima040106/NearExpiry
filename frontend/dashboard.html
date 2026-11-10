@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | NearExpiry</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg bg-white border-bottom">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand brand" href="dashboard.html">
+                NearExpiry<span>.</span>
+            </a>
+
+            <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#mainNavbar"
+                aria-controls="mainNavbar"
+                aria-expanded="false"
+                aria-label="Toggle navigation"
+            >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="dashboard.html">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="inventory.html">Inventory</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="surplus.html">Surplus</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="requests.html">Requests</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="audit.html">Audit Logs</a>
+                    </li>
+                    <li class="nav-item" id="adminNavItem">
+                        <a class="nav-link" href="admin.html">Admin</a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-3">
+                    <span id="userInfo" class="small text-muted"></span>
+                    <button id="logoutButton" class="btn btn-outline-secondary btn-sm">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container-fluid px-4 py-4">
+
+        <section class="mb-4">
+            <p class="text-muted mb-1">Overview</p>
+            <h1 class="h2 mb-2">Dashboard</h1>
+            <p class="text-muted mb-0">
+                Monitor medicine inventory, expiry alerts and facility requests.
+            </p>
+        </section>
+
+        <div id="dashboardMessage" class="alert d-none" role="alert"></div>
+
+        <section class="row g-3 mb-4">
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <p class="text-muted mb-2">Near Expiry</p>
+                        <h2 class="display-5 fw-semibold" id="nearExpiryCount">--</h2>
+                        <p class="small text-muted mb-0">
+                            Medicines approaching expiry
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <p class="text-muted mb-2">Expired Medicines</p>
+                        <h2 class="display-5 fw-semibold" id="expiredCount">--</h2>
+                        <p class="small text-muted mb-0">
+                            Medicines past expiry date
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <p class="text-muted mb-2">Pending Requests</p>
+                        <h2 class="display-5 fw-semibold" id="pendingCount">--</h2>
+                        <p class="small text-muted mb-0">
+                            Requests awaiting a decision
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <p class="text-muted mb-2">Approved Requests</p>
+                        <h2 class="display-5 fw-semibold" id="approvedCount">--</h2>
+                        <p class="small text-muted mb-0">
+                            Successfully approved requests
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <section class="row g-3">
+
+            <div class="col-12 col-lg-7">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <h2 class="h5 mb-2">Medicine sharing network</h2>
+                        <p class="text-muted">
+                            Find available surplus medicines at other facilities
+                            and submit requests to reduce medicine wastage.
+                        </p>
+
+                        <a href="surplus.html" class="btn btn-primary-custom">
+                            Explore surplus medicines
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-5">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <h2 class="h5 mb-3">Quick actions</h2>
+
+                        <div class="d-grid gap-2">
+                            <a href="inventory.html" class="btn btn-outline-secondary">
+                                Manage inventory
+                            </a>
+
+                            <a href="requests.html" class="btn btn-outline-secondary">
+                                View requests
+                            </a>
+
+                            <a href="audit.html" class="btn btn-outline-secondary">
+                                View audit logs
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <p class="small text-muted mt-4 mb-0" id="lastUpdated">
+            Loading dashboard data...
+        </p>
+
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

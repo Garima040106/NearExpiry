@@ -1,0 +1,246 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surplus Medicines | NearExpiry</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg bg-white border-bottom">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand brand" href="dashboard.html">
+                NearExpiry<span>.</span>
+            </a>
+
+            <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#mainNavbar"
+                aria-controls="mainNavbar"
+                aria-expanded="false"
+                aria-label="Toggle navigation"
+            >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="inventory.html">Inventory</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="surplus.html">Surplus</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="requests.html">Requests</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="audit.html">Audit Logs</a>
+                    </li>
+                    <li class="nav-item" id="adminNavItem">
+                        <a class="nav-link" href="admin.html">Admin</a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-3">
+                    <span id="userInfo" class="small text-muted"></span>
+                    <button id="logoutButton" class="btn btn-outline-secondary btn-sm">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container-fluid px-4 py-4">
+
+        <section class="mb-4">
+            <p class="text-muted mb-1">Inter-facility sharing</p>
+            <h1 class="h2 mb-2">Surplus medicines</h1>
+            <p class="text-muted mb-0">
+                Discover available medicine stock at other healthcare facilities
+                and request what your facility needs.
+            </p>
+        </section>
+
+        <div id="surplusMessage" class="alert d-none" role="alert"></div>
+
+        <section class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <form id="filterForm" class="row g-3 align-items-end">
+
+                    <div class="col-12 col-md-6">
+                        <label for="searchInput" class="form-label">
+                            Search medicine
+                        </label>
+                        <input
+                            type="search"
+                            id="searchInput"
+                            class="form-control"
+                            placeholder="Medicine name or batch number"
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="daysFilter" class="form-label">
+                            Expiring within
+                        </label>
+                        <select id="daysFilter" class="form-select">
+                            <option value="">Any available expiry date</option>
+                            <option value="30">30 days</option>
+                            <option value="60">60 days</option>
+                            <option value="90">90 days</option>
+                            <option value="180">180 days</option>
+                            <option value="365">1 year</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-2 d-flex gap-2">
+                        <button
+                            type="submit"
+                            class="btn btn-primary-custom flex-grow-1"
+                        >
+                            Search
+                        </button>
+                        <button
+                            type="button"
+                            id="resetFilters"
+                            class="btn btn-outline-secondary"
+                        >
+                            Reset
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </section>
+
+        <section class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h5 mb-0">Available stock</h2>
+            <span class="small text-muted" id="surplusCount">Loading...</span>
+        </section>
+
+        <section id="surplusList" class="row g-3">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5 text-muted">
+                        Loading available medicines...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Request Medicine Modal -->
+    <div
+        class="modal fade"
+        id="requestModal"
+        tabindex="-1"
+        aria-labelledby="requestModalLabel"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="requestModalLabel">
+                        Request medicine
+                    </h2>
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"
+                    ></button>
+                </div>
+
+                <form id="requestForm">
+                    <div class="modal-body">
+
+                        <input type="hidden" id="requestMedicineId">
+
+                        <div class="mb-3">
+                            <label class="form-label">Selected medicine</label>
+                            <p class="fw-semibold mb-0" id="selectedMedicineName"></p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Supplying facility</label>
+                            <p class="mb-0" id="selectedFacilityName"></p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Available surplus</label>
+                            <p class="mb-0" id="selectedSurplus"></p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="requestQuantity" class="form-label">
+                                Quantity required
+                            </label>
+                            <input
+                                type="number"
+                                id="requestQuantity"
+                                class="form-control"
+                                min="1"
+                                step="1"
+                                required
+                            >
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="requestReason" class="form-label">
+                                Reason for request
+                            </label>
+                            <textarea
+                                id="requestReason"
+                                class="form-control"
+                                rows="3"
+                                maxlength="500"
+                                placeholder="Explain why your facility needs this medicine"
+                            ></textarea>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            class="btn btn-primary-custom"
+                            id="submitRequestButton"
+                        >
+                            Submit request
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/surplus.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

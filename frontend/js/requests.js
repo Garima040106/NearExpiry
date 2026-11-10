@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     document.getElementById("logoutButton").addEventListener("click", () => {
-        API.logout();
+        clearAuth(); window.location.href = "/login.html";
     });
 
     let requests = [];
